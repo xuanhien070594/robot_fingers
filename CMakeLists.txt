@@ -26,13 +26,13 @@ find_package(blmc_drivers REQUIRED)
 find_package(robot_interfaces REQUIRED)
 find_package(trifinger_cameras REQUIRED)
 find_package(trifinger_object_tracking REQUIRED)
+find_package(trifinger_msgs REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 find_package(Eigen3 REQUIRED)
 find_package(fmt REQUIRED)
 find_package(OpenCV REQUIRED)
-
 
 ament_python_install_package(${PROJECT_NAME} PACKAGE_DIR ${PROJECT_NAME})
 
@@ -242,7 +242,6 @@ endif()
 # Building documentation
 add_documentation()
 
-
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_include_directories(include)
 ament_export_dependencies(
@@ -250,5 +249,6 @@ ament_export_dependencies(
     robot_interfaces
     trifinger_cameras
     trifinger_object_tracking
+    trifinger_msgs
 )
 ament_package()
