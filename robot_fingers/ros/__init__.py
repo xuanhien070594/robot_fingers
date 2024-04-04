@@ -4,6 +4,7 @@ import rclpy.node
 import rclpy.qos
 from std_msgs.msg import String
 from std_srvs.srv import Empty
+from trifinger_msgs.msg import TrifingerState
 
 
 class NotificationNode(rclpy.node.Node):
@@ -44,3 +45,18 @@ class NotificationNode(rclpy.node.Node):
         msg = String()
         msg.data = status
         self._status_publisher.publish(msg)
+
+
+class TrifingerStatePublisher(rclpy.node.Node):
+    def __init__(self):
+        super().__init__("trifinger_state_publisher")
+        self._publisher = self.create_publisher(TrifingerState, "/trifinger/joint_states", 10)
+    
+    def publish(self, observation):
+        msg = TrifingerState()
+        msg.data.position[:3] = observation.position
+        msg.data.velocity[:3] = observation.velocity
+        msg.data.torque[:3] = observation.torque
+        self._publisher.publish(msg)
+
+
