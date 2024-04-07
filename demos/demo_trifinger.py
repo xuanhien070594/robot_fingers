@@ -7,11 +7,13 @@ testing.
 import argparse
 import numpy as np
 
+import rclpy
 import robot_interfaces
 import robot_fingers
+from robot_fingers.ros import TrifingerStatePublisher
 
 
-def run_choreography(frontend):
+def run_choreography(frontend, trifinger_state_publisher):
     """Move the legs in some hard-coded choreography."""
 
     def perform_step(position):
@@ -20,7 +22,10 @@ def run_choreography(frontend):
             t = frontend.append_desired_action(
                 robot_interfaces.trifinger.Action(position=position)
             )
-            frontend.wait_until_timeindex(t)
+            #frontend.wait_until_timeindex(t)
+            obs = frontend.get_observation(t)
+            trifinger_state_publisher.publish(obs)
+            rclpy.spin_once(trifinger_state_publisher, timeout_sec=1e-4)
 
     deg22 = np.pi / 8
     deg45 = np.pi / 4
@@ -76,6 +81,9 @@ def main():
                         process.""",
     )
     args = parser.parse_args()
+    rclpy.init()
+    trifinger_state_publisher = TrifingerStatePublisher()
+
 
     if args.multi_process:
         # In multi-process case assume that the backend is running in a
@@ -94,7 +102,13 @@ def main():
         frontend = robot.frontend
 
     # move around
-    run_choreography(frontend)
+    run_choreography(frontend, trifinger_state_publisher)
+
+    # Destroy the node explicitly
+    # (optional - otherwise it will be done automatically
+    # when the garbage collector destroys the node object)
+    trifinger_state_publisher.destroy_node()
+    rclpy.shutdown()
 
 
 if __name__ == "__main__":

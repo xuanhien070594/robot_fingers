@@ -5,6 +5,7 @@ Runs the leader multi-processing robot/sensor data and loggers.
 """
 import argparse
 import sys
+import os
 
 # ROS imports
 import rclpy
@@ -20,6 +21,7 @@ ROBOT_TIME_SERIES_LENGTH = 1000
 
 
 def main():
+    os.nice(-20)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--max-number-of-actions",

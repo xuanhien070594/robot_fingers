@@ -46,17 +46,18 @@ class NotificationNode(rclpy.node.Node):
         msg.data = status
         self._status_publisher.publish(msg)
 
-
 class TrifingerStatePublisher(rclpy.node.Node):
     def __init__(self):
         super().__init__("trifinger_state_publisher")
-        self._publisher = self.create_publisher(TrifingerState, "/trifinger/joint_states", 10)
-    
+        self.publisher_ = self.create_publisher(TrifingerState, "/trifinger/joint_states", 10)
+
     def publish(self, observation):
         msg = TrifingerState()
-        msg.data.position[:3] = observation.position
-        msg.data.velocity[:3] = observation.velocity
-        msg.data.torque[:3] = observation.torque
-        self._publisher.publish(msg)
-
-
+        msg.position[:3] = observation.position[:3]
+        msg.velocity[:3] = observation.velocity[:3]
+        msg.torque = observation.torque
+        msg.tip_force = observation.tip_force
+        msg.header.stamp = self.get_clock().now().to_msg()
+        # import ipdb;
+        # ipdb.set_trace()
+        self.publisher_.publish(msg)
