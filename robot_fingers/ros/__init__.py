@@ -58,6 +58,4 @@ class TrifingerStatePublisher(rclpy.node.Node):
         msg.torque = observation.torque
         msg.tip_force = observation.tip_force
         msg.header.stamp = self.get_clock().now().to_msg()
-        # import ipdb;
-        # ipdb.set_trace()
         self.publisher_.publish(msg)
