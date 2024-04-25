@@ -2,9 +2,12 @@
 import rclpy
 import rclpy.node
 import rclpy.qos
+import robot_interfaces
+from threading import Lock
 from std_msgs.msg import String
 from std_srvs.srv import Empty
-from trifinger_msgs.msg import TrifingerState
+from trifinger_msgs.msg import TrifingerState, TrifingerAction
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 
 
 class NotificationNode(rclpy.node.Node):
@@ -46,16 +49,38 @@ class NotificationNode(rclpy.node.Node):
         msg.data = status
         self._status_publisher.publish(msg)
 
-class TrifingerStatePublisher(rclpy.node.Node):
-    def __init__(self):
-        super().__init__("trifinger_state_publisher")
-        self.publisher_ = self.create_publisher(TrifingerState, "/trifinger/joint_states", 10)
 
-    def publish(self, observation):
+class TrifingerActionSubscriberStatePublisher(rclpy.node.Node):
+    def __init__(self, robot_frontend):
+        super().__init__("trifinger_action_subscriber_state_publisher")
+        self.robot_frontend = robot_frontend
+
+        state_publish_cb_group = MutuallyExclusiveCallbackGroup()
+        action_subscribe_cb_group = MutuallyExclusiveCallbackGroup()
+
+        self.publisher_ = self.create_publisher(TrifingerState, "/trifinger/joint_states", 10)
+        timer_period = 1e-3  # seconds
+        self.timer = self.create_timer(timer_period, self.state_pub_callback, callback_group=state_publish_cb_group)
+
+        self.subscription = self.create_subscription(TrifingerAction, "/trifinger/actions", self.action_sub_callback, 10, callback_group=action_subscribe_cb_group)
+        self.lock = Lock()
+        self._torque = [0.0, 0.0, 0.0]
+
+    def state_pub_callback(self):
+        action = robot_interfaces.finger.Action(torque=self._torque)
+        t = self.robot_frontend.append_desired_action(action)
+        observation = self.robot_frontend.get_observation(t)
+
         msg = TrifingerState()
         msg.position[:3] = observation.position[:3]
         msg.velocity[:3] = observation.velocity[:3]
-        msg.torque = observation.torque
-        msg.tip_force = observation.tip_force
+        msg.torque[:3] = observation.torque[:3]
+        msg.tip_force[:3] = observation.tip_force[:3]
         msg.header.stamp = self.get_clock().now().to_msg()
         self.publisher_.publish(msg)
+
+    def action_sub_callback(self, msg):
+        self.lock.acquire() 
+        self.torque_ = msg.torque[:3]
+        self.lock.release()
+

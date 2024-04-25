@@ -4,6 +4,7 @@
 Moves the TriFingerEdu robot with a hard-coded choreography for show-casing and
 testing.
 """
+import os
 import argparse
 
 import robot_interfaces
@@ -21,21 +22,20 @@ def run_choreography(frontend):
             )
             frontend.wait_until_timeindex(t)
 
-    pose_initial = [0, 0.9, -1.7]
-    pose_intermediate = [0.75, 1.2, -2.3]
-    pose_up = [1.5, 1.5, -3.0]
+    pose_initial = [0, 0.8, -1.5707]
+    pose_intermediate = [0.05, 0.0, 0.0]
+    pose_up = [0, 0.0, 0.0]
 
-    time_printer = robot_fingers.utils.TimePrinter()
+    #time_printer = robot_fingers.utils.TimePrinter()
 
     while True:
-        # initial pose
         perform_step(pose_initial * 3)
-        perform_step(pose_intermediate * 3)
-        perform_step(pose_up * 3)
+        #perform_step(pose_intermediate * 3)
+        #perform_step(pose_up * 3)
 
         # print current date/time every hour, so we can roughly see how long it
         # ran in case it crashes during a long-run-test.
-        time_printer.update()
+        #time_printer.update()
 
 
 def main():
@@ -70,4 +70,5 @@ def main():
 
 
 if __name__ == "__main__":
+    os.nice(-19)
     main()

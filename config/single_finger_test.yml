@@ -1,19 +1,29 @@
 can_ports: ["can0", "can1"]
 max_current_A: 2
 has_endstop: false
-homing_method: "current_position"
+homing_method: "next_index"
+#homing_method: none
 move_to_position_tolerance_rad: 0.05
 calibration:
-    endstop_search_torques_Nm: [-0.22, -0.22, -0.22]
-    move_steps: 500
+    endstop_search_torques_Nm: [-0.1, -0.1, +0.1]
+    move_steps: 1500
 safety_kd: [0.08, 0.08, 0.04]
 position_control_gains:
     kp: [4, 4, 4]
-    kd: [0.01, 0.01, 0.01]
+    kd: [0.015, 0.015, 0.015]
 
 # No position limits in this mode
 hard_position_limits_lower: [-.inf, -.inf, -.inf]
 hard_position_limits_upper: [.inf, .inf, .inf]
 
-home_offset_rad: [0, 0, 0]
-initial_position_rad: [0, 0, 0]
+#home_offset_rad: [0, 0, 0]       # for no homing
+#initial_position_rad: [0, 0, 0]  # for no homing
+
+#home_offset_rad: [-0.186, -0.864, 1.8485]  # strictly for finger 2
+#initial_position_rad: [0, 0.8, -1.5707]    # strictly for finger 2
+
+#home_offset_rad: [-0.192, -1.223, 1.6405]  # strictly for finger 1
+#initial_position_rad: [0, 0.8, -1.5707]    # strictly for finger 1
+
+home_offset_rad: [-0.125, -0.894, 1.164]  # strictly for finger 0
+initial_position_rad: [0, 0.8, -1.5707]   # strictly for finger 0

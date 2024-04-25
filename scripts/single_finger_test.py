@@ -213,7 +213,9 @@ def loop(win, frontend):
         target_position = frontend.get_observation(t).position
 
         while okay:
-            desired_action = finger.Action(position=target_position)
+            #desired_action = finger.Action(position=target_position)
+            #desired_action = finger.Action()
+            desired_action = finger.Action(position=[0.0, 0.8, -1.5707])
             t = frontend.append_desired_action(desired_action)
             obs = frontend.get_observation(t)
             applied_action = frontend.get_applied_action(t)
@@ -250,4 +252,5 @@ def main():
 
 
 if __name__ == "__main__":
+    os.nice(-19)
     main()
