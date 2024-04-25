@@ -648,8 +648,8 @@ typename Driver::Types::BackendPtr create_backend(
     const double first_action_timeout = std::numeric_limits<double>::infinity(),
     const uint32_t max_number_of_actions = 0)
 {
-    constexpr double MAX_ACTION_DURATION_S = 0.003;
-    constexpr double MAX_INTER_ACTION_DURATION_S = 0.005;
+    constexpr double MAX_ACTION_DURATION_S = 0.005;
+    constexpr double MAX_INTER_ACTION_DURATION_S = 0.010;
 
     config.print();
 
