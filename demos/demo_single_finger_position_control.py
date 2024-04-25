@@ -23,7 +23,7 @@ def get_random_position():
 def demo_position_control():
     # Use the default configuration file from the robot_fingers package
     rclpy.init()
-    
+
     config_file_path = os.path.join(
         get_package_share_directory("robot_fingers"), "config", "finger.yml"
     )
@@ -39,44 +39,20 @@ def demo_position_control():
     # The frontend is used by the user to get observations and send actions
     robot_frontend = robot_interfaces.finger.Frontend(robot_data)
 
-    trifinger_act_sub_state_pub = TrifingerActionSubscriberStatePublisher(robot_frontend)
+    trifinger_act_sub_state_pub = TrifingerActionSubscriberStatePublisher(
+        robot_frontend
+    )
     executor = MultiThreadedExecutor()
     executor.add_node(trifinger_act_sub_state_pub)
 
     # Initializes the robot (e.g. performs homing).
     robot_backend.initialize()
 
-    #while rclpy.ok():
-        # Run a position controller that randomly changes the desired position
-        # every 500 steps.  One time step corresponds to roughly 1 ms.
-
-        #desired_position = get_random_position()
-        #for _ in range(500):
-            # Appends a torque command ("action") to the action queue.
-            # Returns the time step at which the action is going to be
-            # executed.
-            #action = robot_interfaces.finger.Action()
-            #t = robot_frontend.append_desired_action(action)
-
-            # wait until the action is executed
-            #robot_frontend.wait_until_timeindex(t)
-            #obs = robot_frontend.get_observation(t)
-            #start_time = time.perf_counter()
-            #trifinger_state_publisher.publish(obs)
-            #rclpy.spin_once(trifinger_state_publisher, timeout_sec=1)
-            #executor.spin_once(timeout_sec=1e-4)
-
-        # print observation of the current time step
-        #observation = robot_frontend.get_observation(t)
-        #print("-----")
-        #print("Desired Position: %s" % desired_position)
-        #print("Position: %s" % observation.position)
-        #print("Velocity: %s" % observation.velocity)
-        #print("Torque: %s" % observation.torque)
+    # Start spinning ROS processes until shutdown.
     executor.spin()
     executor.shutdown()
     trifinger_act_sub_state_pub.destroy_node()
-    rclpy.shut_down()
+    rclpy.shutdown()
 
 
 if __name__ == "__main__":

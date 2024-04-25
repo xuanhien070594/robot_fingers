@@ -1,4 +1,5 @@
 """ROS-related classes/functions."""
+
 import rclpy
 import rclpy.node
 import rclpy.qos
@@ -7,7 +8,7 @@ from threading import Lock
 from std_msgs.msg import String
 from std_srvs.srv import Empty
 from trifinger_msgs.msg import TrifingerState, TrifingerAction
-from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
 
 class NotificationNode(rclpy.node.Node):
@@ -58,11 +59,21 @@ class TrifingerActionSubscriberStatePublisher(rclpy.node.Node):
         state_publish_cb_group = MutuallyExclusiveCallbackGroup()
         action_subscribe_cb_group = MutuallyExclusiveCallbackGroup()
 
-        self.publisher_ = self.create_publisher(TrifingerState, "/trifinger/joint_states", 10)
+        self.publisher_ = self.create_publisher(
+            TrifingerState, "/trifinger/joint_states", 10
+        )
         timer_period = 1e-3  # seconds
-        self.timer = self.create_timer(timer_period, self.state_pub_callback, callback_group=state_publish_cb_group)
+        self.timer = self.create_timer(
+            timer_period, self.state_pub_callback, callback_group=state_publish_cb_group
+        )
 
-        self.subscription = self.create_subscription(TrifingerAction, "/trifinger/actions", self.action_sub_callback, 10, callback_group=action_subscribe_cb_group)
+        self.subscription = self.create_subscription(
+            TrifingerAction,
+            "/trifinger/actions",
+            self.action_sub_callback,
+            10,
+            callback_group=action_subscribe_cb_group,
+        )
         self.lock = Lock()
         self._torque = [0.0, 0.0, 0.0]
 
@@ -80,7 +91,6 @@ class TrifingerActionSubscriberStatePublisher(rclpy.node.Node):
         self.publisher_.publish(msg)
 
     def action_sub_callback(self, msg):
-        self.lock.acquire() 
+        self.lock.acquire()
         self.torque_ = msg.torque[:3]
         self.lock.release()
-
