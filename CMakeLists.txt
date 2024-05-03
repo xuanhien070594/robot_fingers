@@ -179,7 +179,7 @@ install_scripts(
     scripts/trifingerpro_print_push_sensor.py
     scripts/trifingerpro_random.py
     scripts/trifingerpro_replay_actions_from_log.py
-
+    scripts/collect_randomized_motions.py
     DESTINATION lib/${PROJECT_NAME}
 )
 
