@@ -4,8 +4,9 @@ import rclpy
 import rclpy.node
 import rclpy.qos
 import robot_interfaces
+import numpy as np
 from threading import Lock
-from std_msgs.msg import String
+from std_msgs.msg import String, Float64MultiArray
 from std_srvs.srv import Empty
 from trifinger_msgs.msg import TrifingerState, TrifingerAction
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
@@ -68,16 +69,23 @@ class TrifingerActionSubscriberStatePublisher(rclpy.node.Node):
         )
 
         self.subscription = self.create_subscription(
-            TrifingerAction,
-            "/trifinger/actions",
+            Float64MultiArray,
+            "/trifinger/trifinger_input",
             self.action_sub_callback,
             10,
             callback_group=action_subscribe_cb_group,
         )
         self.lock = Lock()
-        self._torque = [0.0, 0.0, 0.0]
 
-    def state_pub_callback(self):
+        # obtain current applied torque (to hold fingers in position when
+        # no new actions are sent)
+        t = self.robot_frontend.append_desired_action(robot_interfaces.finger.Action())
+        self._torque = np.array(self.robot_frontend.get_observation(t).torque[:3])
+        self._count = 0
+
+    def state_pub_callback(self): 
+        if self._count % 100:
+            print(f"current desired torque: {self._torque}")
         action = robot_interfaces.finger.Action(torque=self._torque)
         t = self.robot_frontend.append_desired_action(action)
         observation = self.robot_frontend.get_observation(t)
@@ -89,8 +97,11 @@ class TrifingerActionSubscriberStatePublisher(rclpy.node.Node):
         msg.tip_force[:3] = observation.tip_force[:3]
         msg.header.stamp = self.get_clock().now().to_msg()
         self.publisher_.publish(msg)
+        self._count += 1
 
     def action_sub_callback(self, msg):
         self.lock.acquire()
-        self.torque_ = msg.torque[:3]
+        self._torque[0] = msg.data[0]
+        self._torque[1] = msg.data[1]
+        self._torque[2] = msg.data[2]
         self.lock.release()

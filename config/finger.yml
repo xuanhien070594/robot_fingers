@@ -6,10 +6,10 @@ homing_method: "next_index"
 #homing_method: "current_position"
 calibration:
     endstop_search_torques_Nm: [-0.1, -0.1, +0.1]
-    move_steps: 500
-safety_kd: [0.08, 0.08, 0.04]
+    move_steps: 1500
+safety_kd: [0.05, 0.05, 0.05]
 position_control_gains:
-    kp: [4, 4, 4]
+    kp: [5, 5, 2]
     kd: [0.015, 0.015, 0.015]
 hard_position_limits_lower: [-1.8, -1.6, -3.3]
 hard_position_limits_upper: [1.8, 4.7, 3.3]
@@ -17,9 +17,13 @@ soft_position_limits_lower: [-1.6, -1.4, -3.1]
 soft_position_limits_upper: [1.6, 4.5, 3.1]
 
 # Set zero-position according to URDF (finger pointing straight down).
-home_offset_rad: [-0.125, -0.894, 1.164]  # strictly for finger 0
-initial_position_rad: [0, 0.8, -1.5707]   # strictly for finger 0
-
 #home_offset_rad: [0, 0, 0]
 #initial_position_rad: [0.0, 0.0, 0.0]
+
+home_offset_rad: [-0.162, -0.894, 1.154]  # strictly for finger 0
+initial_position_rad: [0, 0.8, -1.5707]   # strictly for finger 0
+
+#home_offset_rad: [-0.16, -0.877, 1.8485]  # strictly for finger 2
+#initial_position_rad: [0, 0.8, -1.5707]    # strictly for finger 2
+#initial_position_rad: [0, 1.0, -2.0]   # strictly for finger 0
 

@@ -142,6 +142,7 @@ install_scripts(
     demos/demo_finger_forward_kinematics.py
     demos/demo_single_finger_position_control.py
     demos/demo_single_finger_torque_control.py
+    demos/demo_single_finger_torque_control_with_ros.py
     demos/demo_simulation_driver.py
     demos/demo_simulation_object_tracker.py
     demos/demo_sparse_position_control.py
@@ -180,6 +181,7 @@ install_scripts(
     scripts/trifingerpro_random.py
     scripts/trifingerpro_replay_actions_from_log.py
     scripts/collect_randomized_motions.py
+    scripts/measure_stiction.py
     DESTINATION lib/${PROJECT_NAME}
 )
 

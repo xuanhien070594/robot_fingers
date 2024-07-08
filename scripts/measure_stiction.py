@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Basic demo on how to run a Finger Robot with position control."""
+"""This script measures torques and velocities under motion."""
 import os
 import time
 
@@ -20,7 +20,25 @@ def get_random_position():
     return np.random.uniform(position_min, position_max) + initial_position
 
 
-def demo_position_control():
+def get_torque_lower_joint(t):
+    amp_torque = 0.1
+    torque = amp_torque * np.sin(-2 * np.pi * t / 2000)
+    assert np.abs(torque) < 0.36
+    return torque
+
+def get_torque_square_wave(t):
+    amp_torque = 0.2
+    period = 2000
+    phase = (t % period) / period
+
+    if phase < 0.5:
+        torque = amp_torque
+    else:
+        torque = -amp_torque
+    assert np.abs(torque) < 0.36
+    return torque
+
+def move_finger():
     # Use the default configuration file from the robot_fingers package
     config_file_path = os.path.join(
         get_package_share_directory("robot_fingers"), "config", "finger.yml"
@@ -45,45 +63,48 @@ def demo_position_control():
     velocities = []
     measured_torques = []
     timestamps = []
+    desired_torques = []
     start_time = time.perf_counter()
     count = 0
-    max_count = 10000
+    max_count = 10001
 
     while count < max_count:
-        # Run a position controller that randomly changes the desired position
-        # every 500 steps.  One time step corresponds to roughly 1 ms.
+        desired_torque_lower_joint = get_torque_lower_joint(count)
+        #desired_torque_lower_joint = get_torque_square_wave(count)
+        desired_torque = np.zeros(3)
+        desired_torque[0] = 0.05
+        desired_torque[1] = 0.15
+        desired_torque[2] = desired_torque_lower_joint
 
-        desired_position = get_random_position()
-        for _ in range(500):
-            # Appends a torque command ("action") to the action queue.
-            # Returns the time step at which the action is going to be
-            # executed.
-            action = robot_interfaces.finger.Action(position=desired_position)
-            t = robot_frontend.append_desired_action(action)
+        action = robot_interfaces.finger.Action(torque=desired_torque)
+        t = robot_frontend.append_desired_action(action)
 
-            # wait until the action is executed
-            robot_frontend.wait_until_timeindex(t)
+        # wait until the action is executed
+        robot_frontend.wait_until_timeindex(t)
 
-            # print observation of the current time step
-            observation = robot_frontend.get_observation(t)
-            timestamps.append(time.perf_counter() - start_time)
-            positions.append(observation.position)
-            velocities.append(observation.velocity)
-            measured_torques.append(observation.torque)
-            count += 1
+        # print observation of the current time step
+        observation = robot_frontend.get_observation(t)
+        timestamps.append(time.perf_counter() - start_time)
+        positions.append(observation.position)
+        velocities.append(observation.velocity)
+        desired_torques.append(desired_torque)
+        measured_torques.append(observation.torque)
+        count += 1
 
     positions = np.array(positions)
     velocities = np.array(velocities)
+    desired_torques = np.array(desired_torques)
     measured_torques = np.array(measured_torques)
     timestamps = np.array(timestamps)
     data = {
         "positions": positions,
         "velocities": velocities,
+        "desired_torques": desired_torques,
         "measured_torques": measured_torques,
         "timestamps": timestamps,
     }
-    np.save(f"random_motions_{cur_datetime}", data)
+    np.save(f"finger0_ramp_up_torque_motions_lower_joint_{cur_datetime}_no_vel_damping", data)
 
 
 if __name__ == "__main__":
-    demo_position_control()
+    move_finger()
