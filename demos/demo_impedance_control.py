@@ -2,6 +2,7 @@
 """Basic demo on how to run a Finger Robot with torque control."""
 import os
 import sys
+import datetime
 import numpy as np
 from ament_index_python.packages import get_package_share_directory
 
@@ -249,13 +250,18 @@ def demo_torque_control():
 
         action_count += 1
 
-    controller.log_fingertip_desired_pos = np.array(
-        controller.log_fingertip_desired_pos
+    cur_datetime = datetime.datetime.now().strftime("%d-%b-%Y_%H:%M:%S")
+    data = {
+        "fingertip_desired_pos": np.array(controller.log_fingertip_desired_pos),
+        "fingertip_cur_pos": np.array(controller.log_fingertip_cur_pos),
+        "commanded_torque": np.array(controller.log_commanded_torque),
+        "actual_torque": np.array(controller.log_actual_torque),
+        "timestamp": np.array(controller.log_timestamp),
+    }
+    np.save(
+        f"finger0_PD_follow_square_{cur_datetime}_no_vel_damping",
+        data,
     )
-    controller.log_fingertip_cur_pos = np.array(controller.log_fingertip_cur_pos)
-    controller.log_commanded_torque = np.array(controller.log_commanded_torque)
-    controller.log_actual_torque = np.array(controller.log_actual_torque)
-    controller.log_timestamp = np.array(controller.log_timestamp)
 
 
 if __name__ == "__main__":
