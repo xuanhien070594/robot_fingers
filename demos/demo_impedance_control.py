@@ -176,7 +176,7 @@ def demo_torque_control():
     action_count = 0
 
     # move fingertip to follow a square
-    count_to_fingertip_delta_pos = {
+    count_to_fingertip_delta_pos_old = {
         1000: np.array([0.03, 0, 0]),
         2000: np.array([0.03, 0, 0]),
         3000: np.array([0, 0.03, 0]),
@@ -187,6 +187,33 @@ def demo_torque_control():
         8000: np.array([0, -0.03, 0]),
         9000: np.array([0, 0, 0.03]),
         10000: np.array([0, 0, 0.03]),
+    }
+
+    count_to_fingertip_delta_pos = {
+        100: np.array([0.01, 0, 0]),
+        200: np.array([0.01, 0, 0]),
+        300: np.array([0.01, 0, 0]),
+        400: np.array([0.01, 0, 0]),
+        500: np.array([0.01, 0, 0]),
+        600: np.array([0.01, 0, 0]),
+        700: np.array([0, 0.01, 0]),
+        800: np.array([0, 0.01, 0]),
+        900: np.array([0, 0.01, 0]),
+        1000: np.array([0, 0.01, 0]),
+        1100: np.array([0, 0.01, 0]),
+        1200: np.array([0, 0.01, 0]),
+        1300: np.array([-0.01, 0, 0]),
+        1400: np.array([-0.01, 0, 0]),
+        1500: np.array([-0.01, 0, 0]),
+        1600: np.array([-0.01, 0, 0]),
+        1700: np.array([-0.01, 0, 0]),
+        1800: np.array([-0.01, 0, 0]),
+        1900: np.array([0, -0.01, 0]),
+        2000: np.array([0, -0.01, 0]),
+        2100: np.array([0, -0.01, 0]),
+        2200: np.array([0, -0.01, 0]),
+        2300: np.array([0, -0.01, 0]),
+        2400: np.array([0, -0.01, 0]),
     }
 
     while True:
