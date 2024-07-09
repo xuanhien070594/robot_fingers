@@ -67,24 +67,26 @@ class ImpedanceController:
     def calc_trifinger_commanded_torque(self, q, dq):
         # compute the current fingertip positions
         pinocchio.forwardKinematics(self.model, self.data, q)
-        pinocchio.updateFramePlacements(self.model, self.data)
+        pinocchio.updateFramePlacement(self.model, self.data, self.fingertip_0_frame_id)
+        pinocchio.updateFramePlacement(self.model, self.data, self.fingertip_120_frame_id)
+        pinocchio.updateFramePlacement(self.model, self.data, self.fingertip_240_frame_id)
         if self.is_new_target:
             self.fingertip_0_desired_target = (
-                self.data.oMf[self.fingertip_0_frame_id].translation
+                self.data.oMf[self.fingertip_0_frame_id].translation.copy()
                 + self.fingertip_delta_pos
             )
             self.fingertip_120_desired_target = (
-                self.data.oMf[self.fingertip_120_frame_id].translation
+                self.data.oMf[self.fingertip_120_frame_id].translation.copy()
                 + self.fingertip_delta_pos
             )
             self.fingertip_240_desired_target = (
-                self.data.oMf[self.fingertip_240_frame_id].translation
+                self.data.oMf[self.fingertip_240_frame_id].translation.copy()
                 + self.fingertip_delta_pos
             )
             self.is_new_target = False
 
         self.log_fingertip_cur_pos.append(
-            self.data.oMf[self.fingertip_0_frame_id].translation
+            self.data.oMf[self.fingertip_0_frame_id].translation.copy()
         )
         self.log_fingertip_desired_pos.append(self.fingertip_0_desired_target)
 
@@ -153,7 +155,7 @@ class ImpedanceController:
 
 def demo_torque_control():
     # move fingertip to follow a square
-    count_to_fingertip_delta_pos_old = {
+    count_to_fingertip_delta_pos = {
         1000: np.array([0.03, 0, 0]),
         2000: np.array([0.03, 0, 0]),
         3000: np.array([0, 0.03, 0]),
@@ -166,7 +168,7 @@ def demo_torque_control():
         10000: np.array([0, 0, 0.03]),
     }
 
-    count_to_fingertip_delta_pos = {
+    count_to_fingertip_delta_pos_old = {
         100: np.array([0.01, 0, 0]),
         200: np.array([0.01, 0, 0]),
         300: np.array([0.01, 0, 0]),
@@ -225,7 +227,7 @@ def demo_torque_control():
 
     action_count = 0
 
-    while action_count < 5000:
+    while action_count < 11000:
         if action_count in count_to_fingertip_delta_pos.keys():
             controller.is_new_target = True
             controller.fingertip_delta_pos = count_to_fingertip_delta_pos[action_count]
@@ -259,7 +261,7 @@ def demo_torque_control():
         "timestamp": np.array(controller.log_timestamp),
     }
     np.save(
-        f"finger0_PD_follow_square_{cur_datetime}_no_vel_damping",
+        f"finger0_PD_follow_square_{cur_datetime}",
         data,
     )
 
