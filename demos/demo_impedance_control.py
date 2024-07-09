@@ -1,0 +1,187 @@
+#!/usr/bin/env python3
+"""Basic demo on how to run a Finger Robot with torque control."""
+import os
+import sys
+import numpy as np
+from ament_index_python.packages import get_package_share_directory
+
+import robot_interfaces
+import robot_fingers
+import pinocchio
+from pinocchio.visualize import MeshcatVisualizer
+
+FINGER_NAME_TO_INDEX_MAPPING = {
+    "finger_tip_link_0": 0,
+    "finger_tip_link_120": 3,
+    "finger_tip_link_240": 6,
+}
+
+
+class ImpedanceController:
+    def __init__(self, kp: np.ndarray, kd: np.ndarray, enable_visualizer: bool = False):
+        self.kp = kp
+        self.kd = kd
+
+        # load trifinger urdf
+        urdf_pkg_path = get_package_share_directory("robot_properties_fingers")
+        urdf_path = os.path.join(urdf_pkg_path, "urdf/edu", "trifingeredu.urdf")
+        self.model, self.collision_model, self.visual_model = (
+            pinocchio.buildModelsFromUrdf(urdf_path)
+        )
+        self.data = self.model.createData()
+        self.fingertip_0_frame_id = self.model.getFrameId("finger_tip_link_0")
+        self.fingertip_120_frame_id = self.model.getFrameId("finger_tip_link_120")
+        self.fingertip_240_frame_id = self.model.getFrameId("finger_tip_link_240")
+
+        # create visualizer if needed
+        self.enable_visualizer = enable_visualizer
+        if enable_visualizer:
+            self.viz = MeshcatVisualizer(
+                self.model, self.collision_model, self.visual_model
+            )
+            try:
+                self.viz.initViewer(open=True)
+            except ImportError as err:
+                print(
+                    "Error while initializing the viewer. It seems you should install Python meshcat"
+                )
+                print(err)
+                sys.exit(0)
+
+            # Load the robot in the viewer.
+            self.viz.loadViewerModel()
+
+            # Display a robot configuration.
+            q0 = pinocchio.neutral(self.model)
+            self.viz.display(q0)
+            self.viz.displayVisuals(True)
+
+    def calc_trifinger_commanded_torque(self, q, dq):
+        # compute the current fingertip positions
+        pinocchio.forwardKinematics(self.model, self.data, q)
+        pinocchio.updateFramePlacements(self.model, self.data)
+        fingertip_0_desired_target = self.data.oMf[
+            self.fingertip_0_frame_id
+        ].translation + np.array([0, 0, 0.0])
+        fingertip_120_desired_target = self.data.oMf[
+            self.fingertip_120_frame_id
+        ].translation + np.array([0, 0, 0.0])
+        fingertip_240_desired_target = self.data.oMf[
+            self.fingertip_240_frame_id
+        ].translation + np.array([0, 0, 0.0])
+
+        pinocchio.computeAllTerms(self.model, self.data, q, dq)
+        mass_matrix = self.data.M
+        nle_term = self.data.g  # only gravity
+
+        commanded_torque_finger_0 = self.calc_commanded_torque_single_finger(
+            "finger_tip_link_0",
+            mass_matrix,
+            q,
+            dq,
+            fingertip_0_desired_target,
+        )
+        commanded_torque_finger_120 = self.calc_commanded_torque_single_finger(
+            "finger_tip_link_120",
+            mass_matrix,
+            q,
+            dq,
+            fingertip_120_desired_target,
+        )
+        commanded_torque_finger_240 = self.calc_commanded_torque_single_finger(
+            "finger_tip_link_240",
+            mass_matrix,
+            q,
+            dq,
+            fingertip_240_desired_target,
+        )
+        commanded_torque = np.concatenate(
+            [
+                commanded_torque_finger_0,
+                commanded_torque_finger_120,
+                commanded_torque_finger_240,
+            ],
+        )
+        commanded_torque += nle_term
+        return commanded_torque
+
+    def calc_commanded_torque_single_finger(
+        self, finger_name, mass_matrix, q, dq, desired_target
+    ):
+        fingertip_frame = self.model.getFrameId(finger_name)
+        fingertip_index = FINGER_NAME_TO_INDEX_MAPPING[finger_name]
+        finger_mass_matrix = mass_matrix[
+            fingertip_index : (fingertip_index + 3),
+            fingertip_index : (fingertip_index + 3),
+        ]
+        J = pinocchio.computeFrameJacobian(
+            self.model, self.data, q, fingertip_frame, pinocchio.ReferenceFrame.WORLD
+        )[:3, fingertip_index : (fingertip_index + 3)]
+        inv_finger_mass_matrix = np.linalg.inv(finger_mass_matrix)
+        effective_mass_matrix = np.linalg.inv(J @ inv_finger_mass_matrix @ J.T)
+
+        pinocchio.updateFramePlacements(self.model, self.data)
+        cur_fingertip_pos = self.data.oMf[fingertip_frame].translation
+        fingertip_delta_pos = desired_target - cur_fingertip_pos
+        fingertip_delta_vel = -J @ dq[fingertip_index : (fingertip_index + 3)]
+
+        commanded_torque = (
+            J.T
+            @ effective_mass_matrix
+            @ (self.kp @ fingertip_delta_pos + self.kd @ fingertip_delta_vel)
+        )
+        return commanded_torque
+
+
+def demo_torque_control():
+    # model, data, viz = load_model_and_visualizer()
+
+    config_file_path = os.path.join(
+        get_package_share_directory("robot_fingers"), "config", "finger.yml"
+    )
+
+    # Storage for all observations, actions, etc.
+    robot_data = robot_interfaces.finger.SingleProcessData()
+
+    # The backend takes care of communication with the robot hardware.
+    robot_backend = robot_fingers.create_real_finger_backend(
+        robot_data, config_file_path
+    )
+
+    # The frontend is used by the user to get observations and send actions
+    robot_frontend = robot_interfaces.finger.Frontend(robot_data)
+
+    # Initialize impedance controller
+    kp = np.diag([1000, 1000, 1000])
+    kd = np.diag([63, 63, 63])
+
+    controller = ImpedanceController(kp, kd)
+
+    # Initializes the robot (e.g. performs homing).
+    robot_backend.initialize()
+
+    # Because we don't know the current state at beginning
+    # to compute desired torque, so it is safe to just send
+    # zero torque and obtain observation. Mark this flag to
+    # False if not sending the first action.
+    is_first_action = True
+
+    while True:
+        if is_first_action:
+            desired_torque = np.zeros(controller.model.nv)
+            is_first_action = False
+        else:
+            desired_torque = controller.calc_trifinger_commanded_torque(
+                cur_position, cur_velocity
+            )
+        action = robot_interfaces.finger.Action(torque=desired_torque)
+        t = robot_frontend.append_desired_action(action)
+        robot_frontend.wait_until_timeindex(t)
+
+        cur_observation = robot_frontend.get_observation(t)
+        cur_position = cur_observation.position
+        cur_velocity = cur_observation.velocity
+
+
+if __name__ == "__main__":
+    demo_torque_control()
