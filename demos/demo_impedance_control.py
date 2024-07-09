@@ -55,20 +55,18 @@ class ImpedanceController:
             q0 = pinocchio.neutral(self.model)
             self.viz.display(q0)
             self.viz.displayVisuals(True)
+        self.is_new_target = True
+        self.fingertip_delta_pos = np.array([0, 0, 0])
 
     def calc_trifinger_commanded_torque(self, q, dq):
         # compute the current fingertip positions
         pinocchio.forwardKinematics(self.model, self.data, q)
         pinocchio.updateFramePlacements(self.model, self.data)
-        fingertip_0_desired_target = self.data.oMf[
-            self.fingertip_0_frame_id
-        ].translation + np.array([0, 0, 0.0])
-        fingertip_120_desired_target = self.data.oMf[
-            self.fingertip_120_frame_id
-        ].translation + np.array([0, 0, 0.0])
-        fingertip_240_desired_target = self.data.oMf[
-            self.fingertip_240_frame_id
-        ].translation + np.array([0, 0, 0.0])
+        if self.is_new_target:
+            self.fingertip_0_desired_target = self.data.oMf[self.fingertip_0_frame_id].translation + self.fingertip_delta_pos
+            self.fingertip_120_desired_target = self.data.oMf[self.fingertip_120_frame_id].translation + self.fingertip_delta_pos
+            self.fingertip_240_desired_target = self.data.oMf[self.fingertip_240_frame_id].translation + self.fingertip_delta_pos
+            self.is_new_target = False
 
         pinocchio.computeAllTerms(self.model, self.data, q, dq)
         mass_matrix = self.data.M
@@ -79,21 +77,21 @@ class ImpedanceController:
             mass_matrix,
             q,
             dq,
-            fingertip_0_desired_target,
+            self.fingertip_0_desired_target,
         )
         commanded_torque_finger_120 = self.calc_commanded_torque_single_finger(
             "finger_tip_link_120",
             mass_matrix,
             q,
             dq,
-            fingertip_120_desired_target,
+            self.fingertip_120_desired_target,
         )
         commanded_torque_finger_240 = self.calc_commanded_torque_single_finger(
             "finger_tip_link_240",
             mass_matrix,
             q,
             dq,
-            fingertip_240_desired_target,
+            self.fingertip_240_desired_target,
         )
         commanded_torque = np.concatenate(
             [
@@ -152,8 +150,8 @@ def demo_torque_control():
     robot_frontend = robot_interfaces.finger.Frontend(robot_data)
 
     # Initialize impedance controller
-    kp = np.diag([1000, 1000, 1000])
-    kd = np.diag([63, 63, 63])
+    kp = np.diag([700, 700, 1000])
+    kd = np.diag([13, 13, 13])
 
     controller = ImpedanceController(kp, kd)
 
@@ -166,14 +164,20 @@ def demo_torque_control():
     # False if not sending the first action.
     is_first_action = True
 
+    action_count = 0
+    count_to_fingertip_delta_pos = {1000: np.array([0.02, 0, 0]), 2000: np.array([0.02, 0, 0]), 3000: np.array([0, 0.02, 0]), 4000: np.array([0, 0.02, 0]), 5000: np.array([-0.02, 0.0, 0]), 6000: np.array([-0.02, 0, 0])}
+
     while True:
+        if action_count != 0 and action_count % 1000 == 0 and action_count < 7000:
+            controller.is_new_target = True
+            controller.fingertip_delta_pos = count_to_fingertip_delta_pos[action_count]
         if is_first_action:
-            desired_torque = np.zeros(controller.model.nv)
+            desired_torque = np.zeros(3)
             is_first_action = False
         else:
             desired_torque = controller.calc_trifinger_commanded_torque(
-                cur_position, cur_velocity
-            )
+                np.tile(cur_position, 3), np.tile(cur_velocity, 3)
+                )[:3]
         action = robot_interfaces.finger.Action(torque=desired_torque)
         t = robot_frontend.append_desired_action(action)
         robot_frontend.wait_until_timeindex(t)
@@ -181,6 +185,7 @@ def demo_torque_control():
         cur_observation = robot_frontend.get_observation(t)
         cur_position = cur_observation.position
         cur_velocity = cur_observation.velocity
+        action_count += 1
 
 
 if __name__ == "__main__":
