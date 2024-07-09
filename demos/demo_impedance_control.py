@@ -63,9 +63,18 @@ class ImpedanceController:
         pinocchio.forwardKinematics(self.model, self.data, q)
         pinocchio.updateFramePlacements(self.model, self.data)
         if self.is_new_target:
-            self.fingertip_0_desired_target = self.data.oMf[self.fingertip_0_frame_id].translation + self.fingertip_delta_pos
-            self.fingertip_120_desired_target = self.data.oMf[self.fingertip_120_frame_id].translation + self.fingertip_delta_pos
-            self.fingertip_240_desired_target = self.data.oMf[self.fingertip_240_frame_id].translation + self.fingertip_delta_pos
+            self.fingertip_0_desired_target = (
+                self.data.oMf[self.fingertip_0_frame_id].translation
+                + self.fingertip_delta_pos
+            )
+            self.fingertip_120_desired_target = (
+                self.data.oMf[self.fingertip_120_frame_id].translation
+                + self.fingertip_delta_pos
+            )
+            self.fingertip_240_desired_target = (
+                self.data.oMf[self.fingertip_240_frame_id].translation
+                + self.fingertip_delta_pos
+            )
             self.is_new_target = False
 
         pinocchio.computeAllTerms(self.model, self.data, q, dq)
@@ -165,10 +174,21 @@ def demo_torque_control():
     is_first_action = True
 
     action_count = 0
-    count_to_fingertip_delta_pos = {1000: np.array([0.02, 0, 0]), 2000: np.array([0.02, 0, 0]), 3000: np.array([0, 0.02, 0]), 4000: np.array([0, 0.02, 0]), 5000: np.array([-0.02, 0.0, 0]), 6000: np.array([-0.02, 0, 0])}
+
+    # move fingertip to follow a square
+    count_to_fingertip_delta_pos = {
+        1000: np.array([0.03, 0, 0]),
+        2000: np.array([0.03, 0, 0]),
+        3000: np.array([0, 0.03, 0]),
+        4000: np.array([0, 0.03, 0]),
+        5000: np.array([-0.03, 0.0, 0]),
+        6000: np.array([-0.03, 0, 0]),
+        7000: np.array([0, -0.03, 0]),
+        8000: np.array([0, -0.03, 0]),
+    }
 
     while True:
-        if action_count != 0 and action_count % 1000 == 0 and action_count < 7000:
+        if action_count in count_to_fingertip_delta_pos.keys():
             controller.is_new_target = True
             controller.fingertip_delta_pos = count_to_fingertip_delta_pos[action_count]
         if is_first_action:
@@ -177,7 +197,7 @@ def demo_torque_control():
         else:
             desired_torque = controller.calc_trifinger_commanded_torque(
                 np.tile(cur_position, 3), np.tile(cur_velocity, 3)
-                )[:3]
+            )[:3]
         action = robot_interfaces.finger.Action(torque=desired_torque)
         t = robot_frontend.append_desired_action(action)
         robot_frontend.wait_until_timeindex(t)
