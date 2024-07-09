@@ -159,7 +159,7 @@ def demo_torque_control():
     robot_frontend = robot_interfaces.finger.Frontend(robot_data)
 
     # Initialize impedance controller
-    kp = np.diag([700, 700, 1000])
+    kp = np.diag([1000, 1000, 2000])
     kd = np.diag([13, 13, 13])
 
     controller = ImpedanceController(kp, kd)
@@ -185,6 +185,8 @@ def demo_torque_control():
         6000: np.array([-0.03, 0, 0]),
         7000: np.array([0, -0.03, 0]),
         8000: np.array([0, -0.03, 0]),
+        9000: np.array([0, 0, 0.03]),
+        10000: np.array([0, 0, 0.03]),
     }
 
     while True:
