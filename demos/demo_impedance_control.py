@@ -57,6 +57,11 @@ class ImpedanceController:
             self.viz.displayVisuals(True)
         self.is_new_target = True
         self.fingertip_delta_pos = np.array([0, 0, 0])
+        self.log_fingertip_desired_pos = []
+        self.log_fingertip_cur_pos = []
+        self.log_commanded_torque = []
+        self.log_actual_torque = []
+        self.log_timestamp = []
 
     def calc_trifinger_commanded_torque(self, q, dq):
         # compute the current fingertip positions
@@ -76,6 +81,11 @@ class ImpedanceController:
                 + self.fingertip_delta_pos
             )
             self.is_new_target = False
+
+        self.log_fingertip_cur_pos.append(
+            self.data.oMf[self.fingertip_0_frame_id].translation
+        )
+        self.log_fingertip_desired_pos.append(self.fingertip_0_desired_target)
 
         pinocchio.computeAllTerms(self.model, self.data, q, dq)
         mass_matrix = self.data.M
@@ -141,40 +151,6 @@ class ImpedanceController:
 
 
 def demo_torque_control():
-    # model, data, viz = load_model_and_visualizer()
-
-    config_file_path = os.path.join(
-        get_package_share_directory("robot_fingers"), "config", "finger.yml"
-    )
-
-    # Storage for all observations, actions, etc.
-    robot_data = robot_interfaces.finger.SingleProcessData()
-
-    # The backend takes care of communication with the robot hardware.
-    robot_backend = robot_fingers.create_real_finger_backend(
-        robot_data, config_file_path
-    )
-
-    # The frontend is used by the user to get observations and send actions
-    robot_frontend = robot_interfaces.finger.Frontend(robot_data)
-
-    # Initialize impedance controller
-    kp = np.diag([1000, 1000, 2000])
-    kd = np.diag([13, 13, 13])
-
-    controller = ImpedanceController(kp, kd)
-
-    # Initializes the robot (e.g. performs homing).
-    robot_backend.initialize()
-
-    # Because we don't know the current state at beginning
-    # to compute desired torque, so it is safe to just send
-    # zero torque and obtain observation. Mark this flag to
-    # False if not sending the first action.
-    is_first_action = True
-
-    action_count = 0
-
     # move fingertip to follow a square
     count_to_fingertip_delta_pos_old = {
         1000: np.array([0.03, 0, 0]),
@@ -216,7 +192,39 @@ def demo_torque_control():
         2400: np.array([0, -0.01, 0]),
     }
 
-    while True:
+    config_file_path = os.path.join(
+        get_package_share_directory("robot_fingers"), "config", "finger.yml"
+    )
+
+    # Storage for all observations, actions, etc.
+    robot_data = robot_interfaces.finger.SingleProcessData()
+
+    # The backend takes care of communication with the robot hardware.
+    robot_backend = robot_fingers.create_real_finger_backend(
+        robot_data, config_file_path
+    )
+
+    # The frontend is used by the user to get observations and send actions
+    robot_frontend = robot_interfaces.finger.Frontend(robot_data)
+
+    # Initialize impedance controller
+    kp = np.diag([1000, 1000, 2000])
+    kd = np.diag([13, 13, 13])
+
+    controller = ImpedanceController(kp, kd)
+
+    # Initializes the robot (e.g. performs homing).
+    robot_backend.initialize()
+
+    # Because we don't know the current state at beginning
+    # to compute desired torque, so it is safe to just send
+    # zero torque and obtain observation. Mark this flag to
+    # False if not sending the first action.
+    is_first_action = True
+
+    action_count = 0
+
+    while action_count < 5000:
         if action_count in count_to_fingertip_delta_pos.keys():
             controller.is_new_target = True
             controller.fingertip_delta_pos = count_to_fingertip_delta_pos[action_count]
@@ -234,7 +242,20 @@ def demo_torque_control():
         cur_observation = robot_frontend.get_observation(t)
         cur_position = cur_observation.position
         cur_velocity = cur_observation.velocity
+
+        controller.log_commanded_torque.append(desired_torque)
+        controller.log_actual_torque.append(cur_observation.torque)
+        controller.log_timestamp.append(action_count)
+
         action_count += 1
+
+    controller.log_fingertip_desired_pos = np.array(
+        controller.log_fingertip_desired_pos
+    )
+    controller.log_fingertip_cur_pos = np.array(controller.log_fingertip_cur_pos)
+    controller.log_commanded_torque = np.array(controller.log_commanded_torque)
+    controller.log_actual_torque = np.array(controller.log_actual_torque)
+    controller.log_timestamp = np.array(controller.log_timestamp)
 
 
 if __name__ == "__main__":
