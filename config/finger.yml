@@ -7,7 +7,7 @@ homing_method: "next_index"
 calibration:
     endstop_search_torques_Nm: [-0.1, -0.1, +0.1]
     move_steps: 1500
-safety_kd: [0.05, 0.05, 0.05]
+safety_kd: [0.005, 0.005, 0.005]
 position_control_gains:
     kp: [5, 5, 2]
     kd: [0.015, 0.015, 0.015]

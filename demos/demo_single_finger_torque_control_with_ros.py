@@ -31,14 +31,15 @@ def demo_torque_control():
     # The frontend is used by the user to get observations and send actions
     robot_frontend = robot_interfaces.finger.Frontend(robot_data)
 
+    # Initializes the robot (e.g. performs homing).
+    robot_backend.initialize()
+
     trifinger_act_sub_state_pub = TrifingerActionSubscriberStatePublisher(
         robot_frontend
     )
     executor = MultiThreadedExecutor()
     executor.add_node(trifinger_act_sub_state_pub)
 
-    # Initializes the robot (e.g. performs homing).
-    robot_backend.initialize()
 
     # Start spinning ROS processes until shutdown.
     executor.spin()
