@@ -143,8 +143,8 @@ install_scripts(
     demos/demo_single_finger_position_control.py
     demos/demo_single_finger_torque_control.py
     demos/demo_single_finger_torque_control_with_ros.py
-        demos/demo_impedance_control.py
-        demos/demo_driver_with_lcm.py
+    demos/demo_impedance_control.py
+    demos/trifinger_driver_with_lcm.py
     demos/demo_simulation_driver.py
     demos/demo_simulation_object_tracker.py
     demos/demo_sparse_position_control.py

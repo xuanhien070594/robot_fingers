@@ -66,7 +66,7 @@ class TrifingerStatePublisher:
         self.lcm_obj.publish(self.channel, msg.encode())
 
 
-def demo_torque_control():
+def run_control_loop():
     ##### Create interface for communication with the firmware #####
     config_file_path = os.path.join(
         get_package_share_directory("robot_fingers"), "config", "finger.yml"
@@ -87,7 +87,6 @@ def demo_torque_control():
     lc = lcm.LCM()
     input_subscriber = TrifingerInputSubscriber(lc, "TRIFINGER_INPUT")
     state_publisher = TrifingerStatePublisher(lc, "TRIFINGER_STATE")
-    action_count = 0
     timeout = 1e-4  # timeout waiting for incoming lcm message for trifinger inputs
 
     # Initializes the robot (e.g. performs homing).
@@ -101,7 +100,7 @@ def demo_torque_control():
 
     while True:
         if is_first_action:
-            desired_torque = np.zeros(3)
+            desired_torque = np.zeros(9)
             is_first_action = False
         else:
             # waiting for new incoming input torque with timeout
@@ -119,4 +118,4 @@ def demo_torque_control():
 
 
 if __name__ == "__main__":
-    demo_torque_control()
+    run_control_loop()
