@@ -53,13 +53,13 @@ def main():
 
     while True:
         #desired_torque = get_random_torque()
-        desired_position = get_random_position()
+        #desired_position = get_random_position()
         for _ in range(500):
             # Appends a torque command ("action") to the action queue.
             # Returns the time step at which the action is going to be
             # executed.
-            #action = robot_interfaces.trifinger.Action(torque=desired_torque)
-            action = robot_interfaces.trifinger.Action(position=desired_position)
+            action = robot_interfaces.trifinger.Action()
+            #action = robot_interfaces.trifinger.Action(position=desired_position)
             t = robot_frontend.append_desired_action(action)
 
             # wait until the action is executed

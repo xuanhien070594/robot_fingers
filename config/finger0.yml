@@ -16,5 +16,8 @@ position_control_gains:
 hard_position_limits_lower: [-.inf, -.inf, -.inf]
 hard_position_limits_upper: [.inf, .inf, .inf]
 
-home_offset_rad: [0, 0, 0]       # for no homing
-initial_position_rad: [0, 0, 0]  # for no homing
+#home_offset_rad: [0, 0, 0]       # for no homing
+#initial_position_rad: [0, 0, 0]  # for no homing
+
+home_offset_rad: [-0.193, -0.911, 1.1735]
+initial_position_rad: [0, 0.8, -1.5707]

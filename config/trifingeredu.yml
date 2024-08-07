@@ -77,6 +77,10 @@ soft_position_limits_upper:
 #initial_position_rad: [0, 0.8, -1.5707, 0, 0.8, -1.5707, 0, 0.8, -1.5707]
 
 # for no homing
-home_offset_rad: [0, 0, 0, 0, 0, 0, 0, 0, 0]
-initial_position_rad: [0, 0, 0, 0, 0, 0, 0, 0, 0]
+#home_offset_rad: [0, 0, 0, 0, 0, 0, 0, 0, 0]
+#initial_position_rad: [0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+home_offset_rad: [-0.193, -0.911, 1.1735, -0.202, -1.236, 1.2286, -0.167, -0.876, 1.8505]
+initial_position_rad: [0, 0.8, -1.5707, 0, 0.8, -1.5707, 0, 0.8, -1.5707]
+
 

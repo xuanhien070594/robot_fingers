@@ -1,8 +1,8 @@
 can_ports: ["can4", "can5"]
 max_current_A: 2
 has_endstop: false
-#homing_method: "next_index"
-homing_method: none
+homing_method: "next_index"
+#homing_method: none
 move_to_position_tolerance_rad: 0.05
 calibration:
     endstop_search_torques_Nm: [-0.1, -0.1, +0.1]
@@ -16,5 +16,8 @@ position_control_gains:
 hard_position_limits_lower: [-.inf, -.inf, -.inf]
 hard_position_limits_upper: [.inf, .inf, .inf]
 
-home_offset_rad: [0, 0, 0]       # for no homing
-initial_position_rad: [0, 0, 0]  # for no homing
+#home_offset_rad: [0, 0, 0]       # for no homing
+#initial_position_rad: [0, 0, 0]  # for no homing
+
+home_offset_rad: [-0.167, -0.876, 1.8505]
+initial_position_rad: [0, 0.8, -1.5707]
