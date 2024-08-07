@@ -1,4 +1,4 @@
-can_ports: ["can6", "can0", "can2", "can3", "can4", "can5"]
+can_ports: ["can0", "can1", "can2", "can3"]
 max_current_A: 2.0
 has_endstop: true
 move_to_position_tolerance_rad: 0.05
@@ -6,9 +6,6 @@ homing_method: "next_index"
 #homing_method: none
 calibration:
     endstop_search_torques_Nm: 
-        - -0.1
-        - -0.1
-        - +0.1
         - -0.1
         - -0.1
         - +0.1
@@ -23,17 +20,11 @@ safety_kd:
     - 0.08
     - 0.08
     - 0.04
-    - 0.08
-    - 0.08
-    - 0.04
 position_control_gains:
-    kp: [3, 3, 3, 3, 3, 3, 3, 3, 3]
-    kd: [0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015]
+    kp: [3, 3, 3, 3, 3, 3]
+    kd: [0.015, 0.015, 0.015, 0.015, 0.015, 0.015]
 
 hard_position_limits_lower:
-    - -2.0
-    - -1.4
-    - -3.2
     - -2.0
     - -1.4
     - -3.2
@@ -47,14 +38,8 @@ hard_position_limits_upper:
     - 1.6
     - 1.8
     - 3.2
-    - 1.6
-    - 1.8
-    - 3.2
-
+ 
 soft_position_limits_lower:
-    - -1.6
-    - -1.2
-    - -3.0
     - -1.6
     - -1.2
     - -3.0
@@ -68,15 +53,11 @@ soft_position_limits_upper:
     - 1.0
     - 1.6
     - 3.0
-    - 1.0
-    - 1.6
-    - 3.0
 
 # Set zero-position according to URDF (finger pointing straight down).
 #home_offset_rad: [-0.125, -0.894, 1.164, -0.192, -1.223, 1.6405, -0.186, -0.864, 1.8485]
 #initial_position_rad: [0, 0.8, -1.5707, 0, 0.8, -1.5707, 0, 0.8, -1.5707]
 
 # for no homing
-home_offset_rad: [0, 0, 0, 0, 0, 0, 0, 0, 0]
-initial_position_rad: [0, 0, 0, 0, 0, 0, 0, 0, 0]
-
+home_offset_rad: [0, 0, 0, 0, 0, 0]
+initial_position_rad: [0, 0, 0, 0, 0, 0]

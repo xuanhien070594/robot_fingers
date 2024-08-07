@@ -298,7 +298,7 @@ auto NJBRD::create_motor_boards(
     std::array<std::shared_ptr<blmc_drivers::CanBus>, N_MOTOR_BOARDS> can_buses;
     for (size_t i = 0; i < can_buses.size(); i++)
     {
-        can_buses[i] = std::make_shared<blmc_drivers::CanBus>(can_ports[i]);
+        can_buses[i] = std::make_shared<blmc_drivers::CanBus>(can_ports[i], 1000, i%3+6);
     }
 
     // set up motor boards -------------------------------------------------
@@ -306,7 +306,7 @@ auto NJBRD::create_motor_boards(
     for (size_t i = 0; i < motor_boards.size(); i++)
     {
         motor_boards[i] = std::make_shared<blmc_drivers::CanBusMotorBoard>(
-            can_buses[i], 1000, 10);
+            can_buses[i], 1000, 10, i%3+6);
         /// \TODO: reduce the timeout further!!
     }
 

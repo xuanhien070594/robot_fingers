@@ -56,17 +56,17 @@ private:
         // motors[7] = std::make_shared<blmc_drivers::Motor>(motor_boards[4], 0);
         // motors[8] = std::make_shared<blmc_drivers::Motor>(motor_boards[4], 1);
 
-	motors[0] = std::make_shared<blmc_drivers::SafeMotor>(motor_boards[1], 0, 1.0, 1000, 25.0);
-        motors[1] = std::make_shared<blmc_drivers::SafeMotor>(motor_boards[0], 0, 1.0, 1000, 25.0);
-        motors[2] = std::make_shared<blmc_drivers::SafeMotor>(motor_boards[0], 1, 1.0, 1000, 25.0);
+	motors[0] = std::make_shared<blmc_drivers::SafeMotor>(motor_boards[1], 0, 2.0, 1000, 70.0);
+        motors[1] = std::make_shared<blmc_drivers::SafeMotor>(motor_boards[0], 0, 2.0, 1000, 70.0);
+        motors[2] = std::make_shared<blmc_drivers::SafeMotor>(motor_boards[0], 1, 2.0, 1000, 70.0);
 
-	motors[3] = std::make_shared<blmc_drivers::SafeMotor>(motor_boards[3], 0, 1.0, 1000, 25.0);
-        motors[4] = std::make_shared<blmc_drivers::SafeMotor>(motor_boards[2], 0, 1.0, 1000, 25.0);
-        motors[5] = std::make_shared<blmc_drivers::SafeMotor>(motor_boards[2], 1, 1.0, 1000, 25.0);
+	motors[3] = std::make_shared<blmc_drivers::SafeMotor>(motor_boards[3], 0, 2.0, 1000, 70.0);
+        motors[4] = std::make_shared<blmc_drivers::SafeMotor>(motor_boards[2], 0, 2.0, 1000, 70.0);
+        motors[5] = std::make_shared<blmc_drivers::SafeMotor>(motor_boards[2], 1, 2.0, 1000, 70.0);
 
-	motors[6] = std::make_shared<blmc_drivers::SafeMotor>(motor_boards[5], 0, 1.0, 1000, 25.0);
-        motors[7] = std::make_shared<blmc_drivers::SafeMotor>(motor_boards[4], 0, 1.0, 1000, 25.0);
-        motors[8] = std::make_shared<blmc_drivers::SafeMotor>(motor_boards[4], 1, 1.0, 1000, 25.0);
+	motors[6] = std::make_shared<blmc_drivers::SafeMotor>(motor_boards[5], 0, 2.0, 1000, 70.0);
+        motors[7] = std::make_shared<blmc_drivers::SafeMotor>(motor_boards[4], 0, 2.0, 1000, 70.0);
+        motors[8] = std::make_shared<blmc_drivers::SafeMotor>(motor_boards[4], 1, 2.0, 1000, 70.0);
 
         return motors;
     }

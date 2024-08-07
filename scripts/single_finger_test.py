@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 """Run single finger in position control mode and print all robot data."""
+import argparse
 import os
 import curses
 import numpy as np
@@ -206,6 +207,7 @@ class CursesGUI:
 def loop(win, frontend):
     gui = CursesGUI(win)
     okay = True
+    count = 0
 
     try:
         # get current position
@@ -213,20 +215,22 @@ def loop(win, frontend):
         target_position = frontend.get_observation(t).position
 
         while okay:
-            #desired_action = finger.Action(position=target_position)
             desired_action = finger.Action()
-            #desired_action = finger.Action(position=[0.0, 0.8, -1.5707])
             t = frontend.append_desired_action(desired_action)
             obs = frontend.get_observation(t)
             applied_action = frontend.get_applied_action(t)
             status = frontend.get_status(t)
 
             okay = gui.update(obs, desired_action, applied_action, status)
+            count +=1
     except Exception as e:
         gui.display_error(str(e))
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config_file", type=str)
+    args = parser.parse_args()
     USE_SIMULATION = False
 
     robot_data = finger.SingleProcessData()
@@ -241,7 +245,7 @@ def main():
         config_file_path = os.path.join(
             get_package_share_directory("robot_fingers"),
             "config",
-            "single_finger_test.yml",
+            args.config_file
         )
         backend = robot_fingers.create_real_finger_backend(robot_data, config_file_path)
 
