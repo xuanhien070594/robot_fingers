@@ -69,19 +69,18 @@ class TrifingerStatePublisher:
 def run_control_loop():
     ##### Create interface for communication with the firmware #####
     config_file_path = os.path.join(
-        get_package_share_directory("robot_fingers"), "config", "finger.yml"
+        get_package_share_directory("robot_fingers"), "config", "trifingeredu.yml"
     )
 
-    # Storage for all observations, actions, etc.
-    robot_data = robot_interfaces.finger.SingleProcessData()
+    robot_data = robot_interfaces.trifinger.SingleProcessData()
 
     # The backend takes care of communication with the robot hardware.
-    robot_backend = robot_fingers.create_real_finger_backend(
+    robot_backend = robot_fingers.create_trifinger_backend(
         robot_data, config_file_path
     )
 
     # The frontend is used by the user to get observations and send actions
-    robot_frontend = robot_interfaces.finger.Frontend(robot_data)
+    robot_frontend = robot_interfaces.trifinger.Frontend(robot_data)
 
     ##### Create LCM interface to communicate with the OSC controller #####
     lc = lcm.LCM()
@@ -109,7 +108,7 @@ def run_control_loop():
                 lc.handle()
             desired_torque = input_subscriber.get_input()
 
-        action = robot_interfaces.finger.Action(torque=desired_torque)
+        action = robot_interfaces.trifinger.Action(torque=desired_torque)
         t = robot_frontend.append_desired_action(action)
         robot_frontend.wait_until_timeindex(t)
 
