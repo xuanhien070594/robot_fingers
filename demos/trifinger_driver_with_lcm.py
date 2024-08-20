@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
 """Basic demo on how to run a Finger Robot with torque control."""
+import os
 import select
 import lcm
-import os
-import sys
-import datetime
 import numpy as np
-from ament_index_python.packages import get_package_share_directory
-from lcmt_robot_input import lcmt_robot_input
-from lcmt_robot_output import lcmt_robot_output
 
 import robot_interfaces
 import robot_fingers
-import pinocchio
-from pinocchio.visualize import MeshcatVisualizer
+
+from ament_index_python.packages import get_package_share_directory
+from lcmt_robot_input import lcmt_robot_input
+from lcmt_robot_output import lcmt_robot_output
 
 
 JOINT_POSITION_NAMES = [
@@ -75,9 +72,7 @@ def run_control_loop():
     robot_data = robot_interfaces.trifinger.SingleProcessData()
 
     # The backend takes care of communication with the robot hardware.
-    robot_backend = robot_fingers.create_trifinger_backend(
-        robot_data, config_file_path
-    )
+    robot_backend = robot_fingers.create_trifinger_backend(robot_data, config_file_path)
 
     # The frontend is used by the user to get observations and send actions
     robot_frontend = robot_interfaces.trifinger.Frontend(robot_data)
