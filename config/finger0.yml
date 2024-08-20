@@ -19,5 +19,8 @@ hard_position_limits_upper: [.inf, .inf, .inf]
 #home_offset_rad: [0, 0, 0]       # for no homing
 #initial_position_rad: [0, 0, 0]  # for no homing
 
-home_offset_rad: [-0.174, -0.904, 1.1635]
+#home_offset_rad: [-0.174, -0.904, 1.1635]
+#initial_position_rad: [0, 0.8, -1.5707]
+
+home_offset_rad: [-0.181, -0.895, 1.1636]
 initial_position_rad: [0, 0.8, -1.5707]

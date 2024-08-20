@@ -185,6 +185,7 @@ install_scripts(
     scripts/trifingerpro_replay_actions_from_log.py
     scripts/collect_randomized_motions.py
     scripts/measure_stiction.py
+    scripts/gui_joint_pd_controller.py
     DESTINATION lib/${PROJECT_NAME}
 )
 
