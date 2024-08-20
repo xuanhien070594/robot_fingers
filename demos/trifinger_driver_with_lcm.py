@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Basic demo on how to run a Finger Robot with torque control."""
 import os
+import time
 import select
 import lcm
 import numpy as np
@@ -60,6 +61,7 @@ class TrifingerStatePublisher:
         msg.position = np.array(observation.position)
         msg.velocity = np.array(observation.velocity)
         msg.effort = np.array(observation.torque)
+        msg.utime = time.time_ns() // 1000
         self.lcm_obj.publish(self.channel, msg.encode())
 
 

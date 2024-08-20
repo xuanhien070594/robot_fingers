@@ -9,7 +9,7 @@ import robot_interfaces
 import robot_fingers
 
 from ament_index_python.packages import get_package_share_directory
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QApplication,
     QWidget,
     QPushButton,
@@ -17,16 +17,19 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
 )
-from PyQt5.QtCore import QThread, pyqtSignal, QMutex, QMutexLocker
+from PyQt6.QtCore import QThread, pyqtSignal, QMutex, QMutexLocker
 
 
 class ControlThread(QThread):
     # Signal to communicate updates to the main thread
     update_signal = pyqtSignal()
 
-    def __init__(self, robot_frontend, current_positions, target_positions, mutex):
+    def __init__(
+        self, robot_frontend, robot_backend, current_positions, target_positions, mutex
+    ):
         super().__init__()
         self.robot_frontend = robot_frontend
+        self.robot_backend = robot_backend
         self.current_positions = current_positions
         self.target_positions = target_positions
         self.mutex = mutex
@@ -38,9 +41,9 @@ class ControlThread(QThread):
 
             with QMutexLocker(self.mutex):
                 desired_position = np.concatenate(
-                    [finger_pos for finger_pos in self.current_positions.values()]
+                    [finger_pos for finger_pos in self.target_positions.values()]
                 )
-                assert all(pos != 0 for pos in desired_position)
+                assert all(pos != 0 for pos in desired_position), "Zero target position"
             for _ in range(100):
                 # Appends a torque command ("action") to the action queue.
                 # Returns the time step at which the action is going to be
@@ -54,9 +57,9 @@ class ControlThread(QThread):
             # print observation of the current time step
             with QMutexLocker(self.mutex):
                 cur_position = self.robot_frontend.get_observation(t).position
-                self.current_positions["Finger 0"] = cur_position[:3]
-                self.current_positions["Finger 1"] = cur_position[3:6]
-                self.current_positions["Finger 2"] = cur_position[6:]
+                self.current_positions["Finger 0"] = cur_position[:3].copy()
+                self.current_positions["Finger 1"] = cur_position[3:6].copy()
+                self.current_positions["Finger 2"] = cur_position[6:].copy()
 
             # Emit a signal to update the GUI
             self.update_signal.emit()
@@ -66,7 +69,6 @@ class RobotController(QWidget):
     def __init__(self):
         super().__init__()
 
-        # --------------- Initialize GUI ------------------------------------
         # Initial current and target positions for each finger
         self.target_positions = {
             "Finger 0": [0] * 3,
@@ -87,9 +89,6 @@ class RobotController(QWidget):
         self.joint_cur_pos_labels = {}
         self.joint_target_pos_labels = {}
 
-        # Create UI elements
-        self.init_ui()
-
         # --------------- Intialize robot driver ------------------------------
         config_file_path = os.path.join(
             get_package_share_directory("robot_fingers"), "config", "trifingeredu.yml"
@@ -109,22 +108,29 @@ class RobotController(QWidget):
         robot_backend.initialize()
 
         # Get the first joint positions and set values to GUI
-        action = robot_interfaces.finger.Action(torque=np.zeros(9))
+        action = robot_interfaces.trifinger.Action(torque=np.zeros(9))
         t = robot_frontend.append_desired_action(action)
         robot_frontend.wait_until_timeindex(t)
 
         cur_joint_positions = robot_frontend.get_observation(t).position
-        self.current_positions["Finger 0"] = cur_joint_positions[:3]
-        self.current_positions["Finger 1"] = cur_joint_positions[3:6]
-        self.current_positions["Finger 2"] = cur_joint_positions[6:]
-        self.target_positions["Finger 0"] = cur_joint_positions[:3]
-        self.target_positions["Finger 1"] = cur_joint_positions[3:6]
-        self.target_positions["Finger 2"] = cur_joint_positions[6:]
+        self.current_positions["Finger 0"] = cur_joint_positions[:3].copy()
+        self.current_positions["Finger 1"] = cur_joint_positions[3:6].copy()
+        self.current_positions["Finger 2"] = cur_joint_positions[6:].copy()
+        self.target_positions["Finger 0"] = cur_joint_positions[:3].copy()
+        self.target_positions["Finger 1"] = cur_joint_positions[3:6].copy()
+        self.target_positions["Finger 2"] = cur_joint_positions[6:].copy()
+
+        # --------------- Initialize GUI ------------------------------------
+        self.init_ui()
 
         # ------------------------ Start control loop  ------------------------------
         # Start the background thread
         self.worker_thread = ControlThread(
-            None, self.current_positions, self.target_positions, self.mutex
+            robot_frontend,
+            robot_backend,
+            self.current_positions,
+            self.target_positions,
+            self.mutex,
         )
         self.worker_thread.update_signal.connect(self.update_current_position)
         self.worker_thread.start()
@@ -213,4 +219,4 @@ class RobotController(QWidget):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     controller = RobotController()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
