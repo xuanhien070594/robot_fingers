@@ -175,12 +175,12 @@ class RobotController(QWidget):
                 # Connect buttons to their respective handlers
                 plus_button.clicked.connect(
                     lambda checked, index=i, f=finger: self.update_target_position(
-                        f, index, 0.01
+                        f, index, 0.03
                     )
                 )
                 minus_button.clicked.connect(
                     lambda checked, index=i, f=finger: self.update_target_position(
-                        f, index, -0.01
+                        f, index, -0.03
                     )
                 )
             finger_layout.addStretch()
