@@ -40,11 +40,11 @@ class ControlThread(QThread):
             # Run a position controller that randomly changes the desired position
             # every 500 steps.  One time step corresponds to roughly 1 ms.
 
-            with QMutexLocker(self.mutex):
-                desired_position = np.concatenate(
-                    [finger_pos for finger_pos in self.target_positions.values()]
-                )
-                assert all(pos != 0 for pos in desired_position), "Zero target position"
+            # with QMutexLocker(self.mutex):
+            desired_position = np.concatenate(
+                [finger_pos for finger_pos in self.target_positions.values()]
+            )
+            assert all(pos != 0 for pos in desired_position), "Zero target position"
             for _ in range(100):
                 # Appends a torque command ("action") to the action queue.
                 # Returns the time step at which the action is going to be
@@ -83,8 +83,8 @@ class RobotController(QWidget):
         }
         urdf_pkg_path = get_package_share_directory("robot_properties_fingers")
         urdf_path = os.path.join(urdf_pkg_path, "urdf/edu", "trifingeredu.urdf")
-        self.model, self.collision_model, self.visual_model = (
-            pinocchio.buildModelsFromUrdf(urdf_path)
+        self.model, self.collision_model, self.visual_model = pinocchio.buildModelsFromUrdf(
+            urdf_path
         )
         self.data = self.model.createData()
         self.fingertip_0_frame_id = self.model.getFrameId("finger_tip_link_0")
@@ -114,6 +114,7 @@ class RobotController(QWidget):
             "Finger 1": None,
             "Finger 2": None,
         }
+        self.index_to_axis_map = {0: "X", 1: "Y", 2: "Z"}
 
         # Mutex for thread-safe access to target_positions and edit current_positions
         self.mutex = QMutex()
@@ -121,6 +122,7 @@ class RobotController(QWidget):
         # Create a layout for each finger section
         self.joint_cur_pos_labels = {}
         self.joint_target_pos_labels = {}
+        self.fingertip_pos_labels = {}
 
         # --------------- Intialize robot driver ------------------------------
         config_file_path = os.path.join(
@@ -155,6 +157,7 @@ class RobotController(QWidget):
 
         # --------------- Initialize GUI ------------------------------------
         self.init_ui()
+        self.update_fingertip_position_and_jacobian()
 
         # ------------------------ Start control loop  ------------------------------
         # Start the background thread
@@ -173,14 +176,14 @@ class RobotController(QWidget):
 
     def update_fingertip_position_and_jacobian(self):
         # retrieve latest trifinger joint positions
-        with QMutexLocker(self.mutex):
-            q = np.concatenate(
-                [
-                    self.current_positions["Finger 0"],
-                    self.current_positions["Finger 1"],
-                    self.current_positions["Finger 2"],
-                ]
-            )
+        # with QMutexLocker(self.mutex):
+        q = np.concatenate(
+            [
+                self.current_positions["Finger 0"],
+                self.current_positions["Finger 1"],
+                self.current_positions["Finger 2"],
+            ]
+        )
         # perform forward kinematics
         pinocchio.forwardKinematics(self.model, self.data, q)
         pinocchio.updateFramePlacement(self.model, self.data, self.fingertip_0_frame_id)
@@ -203,8 +206,12 @@ class RobotController(QWidget):
             )[:3, fingertip_index : (fingertip_index + 3)]
             self.current_fingertips_jacobian[finger] = J.copy()
             self.current_fingertips_position[finger] = (
-                self.data.oMf[fingertip_frame].translation().copy()
+                self.data.oMf[fingertip_frame].translation.copy().tolist()
             )
+            for i in range(3):
+                self.fingertip_pos_labels[(finger, i)].setText(
+                    f"{self.index_to_axis_map[i]} Pos: {self.current_fingertips_position[finger][i]:.4f}"
+                )
 
     def init_ui(self):
         main_layout = QVBoxLayout()
@@ -222,7 +229,6 @@ class RobotController(QWidget):
                 joint_cur_pos_label = QLabel(
                     f"Current Position: {self.current_positions[finger][i]:.4f}"
                 )
-                joint_cur_pos_label.setStyleSheet("font-weight: bold")
                 self.joint_cur_pos_labels[(finger, i)] = joint_cur_pos_label
                 joint_layout.addWidget(joint_name_label)
                 joint_layout.addWidget(joint_cur_pos_label)
@@ -231,7 +237,6 @@ class RobotController(QWidget):
                 joint_target_pos_label = QLabel(
                     f"Target Position: {self.target_positions[finger][i]:.4f}"
                 )
-                joint_target_pos_label.setStyleSheet("font-weight: bold")
                 self.joint_target_pos_labels[(finger, i)] = joint_target_pos_label
                 plus_button = QPushButton(f"+")
                 minus_button = QPushButton(f"-")
@@ -257,12 +262,13 @@ class RobotController(QWidget):
 
             fingertip_pos_layout = QVBoxLayout()
             fingertip_pos_label = QLabel(f"Fingertip Position")
-            index_to_axis_map = {0: "X", 1: "Y", 2: "Z"}
+            fingertip_pos_layout.addWidget(fingertip_pos_label)
             for i in range(3):
                 fingertip_sub_pos_layout = QHBoxLayout()
                 fingertip_sub_pos_label = QLabel(
-                    f"{index_to_axis_map[i]} Pos: {self.current_fingertips_position[finger][i]:.4f}"
+                    f"{self.index_to_axis_map[i]} Pos: {self.current_fingertips_position[finger][i]:.4f}"
                 )
+                self.fingertip_pos_labels[(finger, i)] = fingertip_sub_pos_label
                 plus_button = QPushButton(f"+")
                 minus_button = QPushButton(f"-")
                 fingertip_sub_pos_layout.addWidget(fingertip_sub_pos_label)
@@ -272,13 +278,13 @@ class RobotController(QWidget):
                 fingertip_pos_layout.addLayout(fingertip_sub_pos_layout)
 
                 plus_button.clicked.connect(
-                    lambda checked, index=i, f=finger: self.update_target_position_vel_IK(
-                        f, index, 0.002
+                    lambda checked, axis=i, f=finger: self.update_target_position_vel_IK(
+                        f, axis, 0.07
                     )
                 )
                 minus_button.clicked.connect(
-                    lambda checked, index=i, f=finger: self.update_target_position_vel_IK(
-                        f, index, -0.002
+                    lambda checked, axis=i, f=finger: self.update_target_position_vel_IK(
+                        f, axis, -0.07
                     )
                 )
 
@@ -298,16 +304,17 @@ class RobotController(QWidget):
         # note that 0 means x-axis, 1 means y-axis, and 2 means z-axis
         dx = np.zeros(3)
         dx[axis] = delta
-        with QMutexLocker(self.mutex):
-            dq = self.current_fingertips_jacobian[finger] @ dx
+        # with QMutexLocker(self.mutex):
+        dq = self.current_fingertips_jacobian[finger] @ dx
 
         with QMutexLocker(self.mutex):
             for i in range(3):
                 self.target_positions[finger][i] += dq[i]
-        if (finger, index) in self.joint_target_pos_labels:
-            self.joint_target_pos_labels[(finger, index)].setText(
-                f"Target Position: {self.target_positions[finger][index]:.4f}"
-            )
+        for finger_index_pair in self.joint_target_pos_labels.keys():
+            if finger == finger_index_pair[0]:
+                self.joint_target_pos_labels[finger_index_pair].setText(
+                    f"Target Position: {self.target_positions[finger][finger_index_pair[1]]:.4f}"
+                )
 
     def update_target_position(self, finger, index, delta):
         with QMutexLocker(self.mutex):
@@ -318,11 +325,11 @@ class RobotController(QWidget):
             )
 
     def update_current_position(self):
-        with QMutexLocker(self.mutex):
-            for (finger, index), label in self.joint_cur_pos_labels.items():
-                label.setText(
-                    f"Current Position: {self.current_positions[finger][index]:.4f}"
-                )
+        # with QMutexLocker(self.mutex):
+        for (finger, index), label in self.joint_cur_pos_labels.items():
+            label.setText(
+                f"Current Position: {self.current_positions[finger][index]:.4f}"
+            )
 
     def closeEvent(self, event):
         # Stop the worker thread when closing the application
